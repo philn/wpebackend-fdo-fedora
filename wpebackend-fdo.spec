@@ -47,7 +47,7 @@ popd
 %license COPYING
 %doc NEWS
 %{_libdir}/libWPEBackend-fdo-0.1.so.0
-%{_libdir}/libWPEbackend-fdo-0.so.0.*
+%{_libdir}/libWPEbackend-fdo-0.1.so.0.*
 
 %files devel
 %{_includedir}/wpe-fdo-0.1

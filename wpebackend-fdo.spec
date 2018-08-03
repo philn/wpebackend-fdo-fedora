@@ -16,6 +16,7 @@ BuildRequires:  libwayland-client-devel
 BuildRequires:  libwayland-egl-devel
 BuildRequires:  libwayland-server-devel
 BuildRequires:  glib2-devel
+BuildRequires:  wpebackend-fdo
 
 %description
 A WPE backend designed for Linux desktop systems.
@@ -47,7 +48,7 @@ popd
 %license COPYING
 %doc NEWS
 %{_libdir}/libWPEBackend-fdo-0.1.so.0
-%{_libdir}/libWPEbackend-fdo-0.1.so.0.*
+%{_libdir}/libWPEBackend-fdo-0.1.so.0.*
 
 %files devel
 %{_includedir}/wpe-fdo-0.1

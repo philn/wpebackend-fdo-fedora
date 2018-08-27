@@ -1,17 +1,17 @@
 Name:           wpebackend-fdo
-Version:        0.1
+Version:        1.0.0
 Release:        1%{?dist}
 Summary:        A WPE backend designed for Linux desktop systems
 
 License:        BSD
 URL:            https://github.com/Igalia/%{name}
-Source0:        https://github.com/Igalia/%{name}/archive/%{version}/%{name}-%{version}.tar.gz
+Source0:        https://github.com/Igalia/%{name}/archive/%{version}/%{name}-%{version}.tar.xz
 
 BuildRequires:  cmake
 BuildRequires:  gcc-c++
 BuildRequires:  mesa-libEGL-devel
 BuildRequires:  libxkbcommon-devel
-BuildRequires:  wpebackend-devel
+BuildRequires:  libwpe-devel
 BuildRequires:  libwayland-client-devel
 BuildRequires:  libwayland-egl-devel
 BuildRequires:  libwayland-server-devel
@@ -29,7 +29,7 @@ The %{name}-devel package contains libraries, build data, and header
 files for developing applications that use %{name}.
 
 %prep
-%autosetup -p1 -n WPEBackend-fdo-%{version}
+%autosetup -p1 -n %{name}-%{version}
 
 %build
 mkdir -p %{_target_platform}
@@ -46,8 +46,8 @@ popd
 %files
 %license COPYING
 %doc NEWS
-%{_libdir}/libWPEBackend-fdo-0.1.so.0
-%{_libdir}/libWPEBackend-fdo-0.1.so.0.*
+%{_libdir}/libWPEBackend-fdo-0.1.so.1
+%{_libdir}/libWPEBackend-fdo-0.1.so.1.*
 
 %files devel
 %{_includedir}/wpe-fdo-0.1
@@ -55,5 +55,7 @@ popd
 %{_libdir}/pkgconfig/wpebackend-fdo-0.1.pc
 
 %changelog
+* Sun Aug 26 2018 Chris King <bunnyapocalypse@protonmail.com> - 1.0.0-1
+- Soname bump
 * Mon Jul 16 2018 Chris King <bunnyapocalypse@fedoraproject.org> - 0.1-1
 - Initial RPM package

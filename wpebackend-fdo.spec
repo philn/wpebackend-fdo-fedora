@@ -1,6 +1,6 @@
 Name:           wpebackend-fdo
-Version:        1.0.0
-Release:        2%{?dist}
+Version:        1.1.90
+Release:        1%{?dist}
 Summary:        A WPE backend designed for Linux desktop systems
 
 License:        BSD
@@ -46,19 +46,23 @@ popd
 %files
 %license COPYING
 %doc NEWS
-%{_libdir}/libWPEBackend-fdo-0.1.so.1
-%{_libdir}/libWPEBackend-fdo-0.1.so.1.*
+%{_libdir}/libWPEBackend-fdo-1.0.so.1
+%{_libdir}/libWPEBackend-fdo-1.0.so.1.*
 
 %files devel
-%{_includedir}/wpe-fdo-0.1
-%{_libdir}/libWPEBackend-fdo-0.1.so
-%{_libdir}/pkgconfig/wpebackend-fdo-0.1.pc
+%{_includedir}/wpe-fdo-1.0
+%{_libdir}/libWPEBackend-fdo-1.0.so
+%{_libdir}/pkgconfig/wpebackend-fdo-1.0.pc
 
 %changelog
+* Tue Feb 26 2019 Chris King <bunnyapocalypse@protonmail.com> - 1.1.90-1
+- New version with soname bump
+
 * Sun Feb 03 2019 Fedora Release Engineering <releng@fedoraproject.org> - 1.0.0-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_30_Mass_Rebuild
 
 * Sun Aug 26 2018 Chris King <bunnyapocalypse@protonmail.com> - 1.0.0-1
 - Soname bump
+
 * Mon Jul 16 2018 Chris King <bunnyapocalypse@fedoraproject.org> - 0.1-1
 - Initial RPM package

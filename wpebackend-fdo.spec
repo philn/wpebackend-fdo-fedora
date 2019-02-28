@@ -1,6 +1,6 @@
 Name:           wpebackend-fdo
 Version:        1.1.90
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        A WPE backend designed for Linux desktop systems
 
 License:        BSD
@@ -12,9 +12,7 @@ BuildRequires:  gcc-c++
 BuildRequires:  mesa-libEGL-devel
 BuildRequires:  libxkbcommon-devel
 BuildRequires:  libwpe-devel
-BuildRequires:  libwayland-client-devel
-BuildRequires:  libwayland-egl-devel
-BuildRequires:  libwayland-server-devel
+BuildRequires:  wayland-devel
 BuildRequires:  glib2-devel
 
 %description
@@ -55,6 +53,9 @@ popd
 %{_libdir}/pkgconfig/wpebackend-fdo-1.0.pc
 
 %changelog
+* Thu Feb 28 2019 Pete Walter <pwalter@fedoraproject.org> - 1.1.90-2
+- Update wayland deps
+
 * Tue Feb 26 2019 Chris King <bunnyapocalypse@protonmail.com> - 1.1.90-1
 - New version with soname bump
 

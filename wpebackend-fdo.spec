@@ -1,6 +1,6 @@
 Name:           wpebackend-fdo
-Version:        1.1.90
-Release:        2%{?dist}
+Version:        1.2.0
+Release:        1%{?dist}
 Summary:        A WPE backend designed for Linux desktop systems
 
 License:        BSD
@@ -53,6 +53,9 @@ popd
 %{_libdir}/pkgconfig/wpebackend-fdo-1.0.pc
 
 %changelog
+* Mon Mar 25 2019 Chris King <bunnyapocalypse@protonmail.com> - 1.2.0-1
+- New version
+
 * Thu Feb 28 2019 Pete Walter <pwalter@fedoraproject.org> - 1.1.90-2
 - Update wayland deps
 

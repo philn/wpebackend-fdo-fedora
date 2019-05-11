@@ -53,7 +53,7 @@ popd
 %{_libdir}/pkgconfig/wpebackend-fdo-1.0.pc
 
 %changelog
-* Mon May 11 2019 Chris King <bunnyapocalypse@protonmail.com> - 1.3.0-1
+* Sat May 11 2019 Chris King <bunnyapocalypse@protonmail.com> - 1.3.0-1
 - New version
 
 * Mon Mar 25 2019 Chris King <bunnyapocalypse@protonmail.com> - 1.2.0-1

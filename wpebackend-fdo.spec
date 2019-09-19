@@ -1,6 +1,6 @@
 Name:           wpebackend-fdo
 Version:        1.4.0
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        A WPE backend designed for Linux desktop systems
 
 License:        BSD
@@ -46,15 +46,18 @@ popd
 %doc NEWS
 %{_libdir}/libWPEBackend-fdo-1.0.so.1
 %{_libdir}/libWPEBackend-fdo-1.0.so.1.*
+%{_libdir}/libWPEBackend-fdo-1.0.so
 
 %files devel
 %{_includedir}/wpe-fdo-1.0
-%{_libdir}/libWPEBackend-fdo-1.0.so
 %{_libdir}/pkgconfig/wpebackend-fdo-1.0.pc
 
 %changelog
+* Thu Sep 19 2019 Chris King <bunnyapocalypse@protonmail.com> - 1.4.0-2
+- Change location of libWPEBackend-fdo.so to allow for WPE backend
+ 
 * Wed Sep 18 2019 Chris King <bunnyapocalypse@protonmail.com> - 1.4.0-1
-- New version
+- new version
 
 * Sat Jul 27 2019 Fedora Release Engineering <releng@fedoraproject.org> - 1.3.1-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_31_Mass_Rebuild

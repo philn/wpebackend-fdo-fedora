@@ -1,5 +1,5 @@
 Name:           wpebackend-fdo
-Version:        1.4.1
+Version:        1.5.90
 Release:        1%{?dist}
 Summary:        A WPE backend designed for Linux desktop systems
 
@@ -53,6 +53,9 @@ popd
 %{_libdir}/pkgconfig/wpebackend-fdo-1.0.pc
 
 %changelog
+* Tue Mar 03 2020 Michael Catanzaro <mcatanzaro@redhat.com> - 1.5.90-1
+- Update to 1.5.90
+
 * Mon Feb 24 2020 Michael Catanzaro <mcatanzaro@redhat.com> - 1.4.1-1
 - Update to 1.4.1
 

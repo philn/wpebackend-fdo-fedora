@@ -1,3 +1,5 @@
+%undefine __cmake_in_source_build
+
 Name:           wpebackend-fdo
 Version:        1.6.1
 Release:        1%{?dist}
@@ -30,16 +32,11 @@ files for developing applications that use %{name}.
 %autosetup -p1 -n %{name}-%{version}
 
 %build
-mkdir -p %{_target_platform}
-pushd %{_target_platform}
-%cmake \
-  ..
-popd
-
-%make_build -C %{_target_platform}
+%cmake
+%cmake_build
 
 %install
-%make_install -C %{_target_platform}
+%cmake_install
 
 %files
 %license COPYING

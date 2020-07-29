@@ -1,21 +1,24 @@
 %undefine __cmake_in_source_build
 
 Name:           wpebackend-fdo
-Version:        1.6.1
-Release:        2%{?dist}
+Version:        1.7.1
+Release:        1%{?dist}
 Summary:        A WPE backend designed for Linux desktop systems
 
 License:        BSD
 URL:            https://github.com/Igalia/%{name}
 Source0:        https://github.com/Igalia/%{name}/archive/%{version}/%{name}-%{version}.tar.xz
 
-BuildRequires:  cmake
 BuildRequires:  gcc-c++
-BuildRequires:  mesa-libEGL-devel
-BuildRequires:  libxkbcommon-devel
-BuildRequires:  libwpe-devel
-BuildRequires:  wayland-devel
-BuildRequires:  glib2-devel
+BuildRequires:  meson
+BuildRequires:  pkgconfig(egl)
+BuildRequires:  pkgconfig(epoxy)
+BuildRequires:  pkgconfig(gio-2.0)
+BuildRequires:  pkgconfig(gobject-2.0)
+BuildRequires:  pkgconfig(xkbcommon)
+BuildRequires:  pkgconfig(wayland-client)
+BuildRequires:  pkgconfig(wayland-server)
+BuildRequires:  pkgconfig(wpe-1.0)
 
 %description
 A WPE backend designed for Linux desktop systems.
@@ -32,11 +35,11 @@ files for developing applications that use %{name}.
 %autosetup -p1 -n %{name}-%{version}
 
 %build
-%cmake
-%cmake_build
+%meson
+%meson_build
 
 %install
-%cmake_install
+%meson_install
 
 %files
 %license COPYING
@@ -50,6 +53,9 @@ files for developing applications that use %{name}.
 %{_libdir}/pkgconfig/wpebackend-fdo-1.0.pc
 
 %changelog
+* Wed Jul 29 2020 Michael Catanzaro <mcatanzaro@redhat.com> - 1.7.1-1
+- Update to 1.7.1 and switch to meson build system
+
 * Wed Jul 29 2020 Fedora Release Engineering <releng@fedoraproject.org> - 1.6.1-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_33_Mass_Rebuild
 

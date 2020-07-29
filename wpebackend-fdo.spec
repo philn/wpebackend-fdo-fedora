@@ -2,7 +2,7 @@
 
 Name:           wpebackend-fdo
 Version:        1.6.1
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        A WPE backend designed for Linux desktop systems
 
 License:        BSD
@@ -50,6 +50,9 @@ files for developing applications that use %{name}.
 %{_libdir}/pkgconfig/wpebackend-fdo-1.0.pc
 
 %changelog
+* Wed Jul 29 2020 Fedora Release Engineering <releng@fedoraproject.org> - 1.6.1-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_33_Mass_Rebuild
+
 * Tue May 26 2020 Michael Catanzaro <mcatanzaro@redhat.com> - 1.6.1-1
 - Update to 1.6.1
 

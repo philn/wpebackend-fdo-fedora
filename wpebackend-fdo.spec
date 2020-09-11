@@ -1,7 +1,7 @@
 %undefine __cmake_in_source_build
 
 Name:           wpebackend-fdo
-Version:        1.7.1
+Version:        1.8.0
 Release:        1%{?dist}
 Summary:        A WPE backend designed for Linux desktop systems
 
@@ -46,13 +46,17 @@ files for developing applications that use %{name}.
 %doc NEWS
 %{_libdir}/libWPEBackend-fdo-1.0.so.1
 %{_libdir}/libWPEBackend-fdo-1.0.so.1.*
-%{_libdir}/libWPEBackend-fdo-1.0.so
 
 %files devel
 %{_includedir}/wpe-fdo-1.0
+%{_libdir}/libWPEBackend-fdo-1.0.so
 %{_libdir}/pkgconfig/wpebackend-fdo-1.0.pc
 
 %changelog
+* Fri Sep 11 2020 Michael Catanzaro <mcatanzaro@redhat.com> -  1.8.0-1
+- Update to 1.8.0
+- Move libWPEBackend-fdo-1.0.so back to -devel package
+
 * Wed Jul 29 2020 Michael Catanzaro <mcatanzaro@redhat.com> - 1.7.1-1
 - Update to 1.7.1 and switch to meson build system
 

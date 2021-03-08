@@ -1,8 +1,8 @@
 %undefine __cmake_in_source_build
 
 Name:           wpebackend-fdo
-Version:        1.8.0
-Release:        2%{?dist}
+Version:        1.9.1
+Release:        1%{?dist}
 Summary:        A WPE backend designed for Linux desktop systems
 
 License:        BSD
@@ -53,6 +53,9 @@ files for developing applications that use %{name}.
 %{_libdir}/pkgconfig/wpebackend-fdo-1.0.pc
 
 %changelog
+* Mon Mar 08 2021 Michael Catanzaro <mcatanzaro@redhat.com> - 1.9.1-1
+- Update to 1.9.1
+
 * Wed Jan 27 2021 Fedora Release Engineering <releng@fedoraproject.org> - 1.8.0-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_34_Mass_Rebuild
 

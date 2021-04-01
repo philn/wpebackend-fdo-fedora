@@ -1,7 +1,7 @@
 %undefine __cmake_in_source_build
 
 Name:           wpebackend-fdo
-Version:        1.9.1
+Version:        1.9.90
 Release:        1%{?dist}
 Summary:        A WPE backend designed for Linux desktop systems
 
@@ -53,6 +53,9 @@ files for developing applications that use %{name}.
 %{_libdir}/pkgconfig/wpebackend-fdo-1.0.pc
 
 %changelog
+* Thu Apr 01 2021 Michael Catanzaro <mcatanzaro@redhat.com> - 1.9.90-1
+- Update to 1.9.90
+
 * Mon Mar 08 2021 Michael Catanzaro <mcatanzaro@redhat.com> - 1.9.1-1
 - Update to 1.9.1
 

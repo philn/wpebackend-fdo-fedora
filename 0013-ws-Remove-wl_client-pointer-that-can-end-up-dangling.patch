@@ -1,0 +1,122 @@
+From 328397f4f4d0e6a3608f6fd8c3ec0abdd5763135 Mon Sep 17 00:00:00 2001
+From: Adrian Perez de Castro <aperez@igalia.com>
+Date: Wed, 14 Apr 2021 15:55:59 +0300
+Subject: [PATCH 13/13] ws: Remove wl_client pointer that can end up dangling
+
+Instead of trying to keep track of the destruction of the wl_client
+references from ViewBackend::m_client, completely remove the member
+variable and instead:
+
+- In ViewBackend::releaseBuffer() use wl_resource_get_client() to obtain
+  the wl_client from the buffer resource. Given that the buffer resource
+  has just been used, it is guaranteed that the wl_client it refers to
+  should be still valid.
+
+- In ViewBackend::dispatchFrameCallbacks() remove the flush call, and
+  instead do it in WS::Surface::dispatchFrameCallbacks(), and pick the
+  wl_client from the callback resource objects, if any callback was
+  dispatched at all. Again, if any callback was dispatched their
+  associated wl_client should be still valid. Skipping the flush if
+  no callbacks are dispatched is fine because in that case there would
+  not be any messages  pending be sent over the wire anyway to trigger
+  dispatching the callbacks in the client side.
+---
+ src/view-backend-private.cpp | 5 ++---
+ src/view-backend-private.h   | 1 -
+ src/ws.cpp                   | 3 +--
+ src/ws.h                     | 9 ++++++++-
+ 4 files changed, 11 insertions(+), 7 deletions(-)
+
+diff --git a/src/view-backend-private.cpp b/src/view-backend-private.cpp
+index b78831d..7e3a738 100644
+--- a/src/view-backend-private.cpp
++++ b/src/view-backend-private.cpp
+@@ -95,20 +95,19 @@ void ViewBackend::dispatchFrameCallbacks()
+     if (G_LIKELY(m_bridgeId))
+         WS::Instance::singleton().dispatchFrameCallbacks(m_bridgeId);
+ 
+-    wl_client_flush(m_client);
+     wpe_view_backend_dispatch_frame_displayed(m_backend);
+ }
+ 
+ void ViewBackend::releaseBuffer(struct wl_resource* buffer_resource)
+ {
+     wl_buffer_send_release(buffer_resource);
+-    wl_client_flush(m_client);
++    wl_client_flush(wl_resource_get_client(buffer_resource));
+ }
+ 
+ void ViewBackend::registerSurface(uint32_t bridgeId)
+ {
+     m_bridgeId = bridgeId;
+-    m_client = WS::Instance::singleton().registerViewBackend(m_bridgeId, *this);
++    WS::Instance::singleton().registerViewBackend(m_bridgeId, *this);
+ }
+ 
+ void ViewBackend::unregisterSurface(uint32_t bridgeId)
+diff --git a/src/view-backend-private.h b/src/view-backend-private.h
+index 15e98e6..363b787 100644
+--- a/src/view-backend-private.h
++++ b/src/view-backend-private.h
+@@ -79,7 +79,6 @@ private:
+     static gboolean s_socketCallback(GSocket*, GIOCondition, gpointer);
+ 
+     uint32_t m_bridgeId { 0 };
+-    struct wl_client* m_client { nullptr };
+ 
+     ClientBundle* m_clientBundle;
+     struct wpe_view_backend* m_backend;
+diff --git a/src/ws.cpp b/src/ws.cpp
+index 87faaf3..622bbf3 100644
+--- a/src/ws.cpp
++++ b/src/ws.cpp
+@@ -519,14 +519,13 @@ void Instance::releaseAudioPacketExport(struct wpe_audio_packet_export* packet_e
+     wpe_audio_packet_export_send_release(packet_export->exportResource);
+ }
+ 
+-struct wl_client* Instance::registerViewBackend(uint32_t bridgeId, APIClient& apiClient)
++void Instance::registerViewBackend(uint32_t bridgeId, APIClient& apiClient)
+ {
+     auto it = m_viewBackendMap.find(bridgeId);
+     if (it == m_viewBackendMap.end())
+         g_error("Instance::registerViewBackend(): " "Cannot find surface with bridgeId %" PRIu32 " in view backend map.", bridgeId);
+ 
+     it->second->apiClient = &apiClient;
+-    return wl_resource_get_client(it->second->resource);
+ }
+ 
+ void Instance::unregisterViewBackend(uint32_t bridgeId)
+diff --git a/src/ws.h b/src/ws.h
+index 30baf8e..1bf528e 100644
+--- a/src/ws.h
++++ b/src/ws.h
+@@ -88,10 +88,17 @@ struct Surface {
+     {
+         struct wl_resource* resource;
+         struct wl_resource* tmp;
++        struct wl_client* client { nullptr };
++
+         wl_resource_for_each_safe(resource, tmp, &m_currentFrameCallbacks) {
++            g_assert(!client || client == wl_resource_get_client(resource));
++            client = wl_resource_get_client(resource);
+             wl_callback_send_done(resource, 0);
+             wl_resource_destroy(resource);
+         }
++
++        if (client)
++            wl_client_flush(client);
+     }
+ 
+ private:
+@@ -129,7 +136,7 @@ public:
+     int createClient();
+ 
+     void registerSurface(uint32_t, Surface*);
+-    struct wl_client* registerViewBackend(uint32_t, APIClient&);
++    void registerViewBackend(uint32_t, APIClient&);
+     void unregisterViewBackend(uint32_t);
+     void dispatchFrameCallbacks(uint32_t);
+ 
+-- 
+2.31.1
+

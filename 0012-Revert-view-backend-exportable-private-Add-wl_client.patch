@@ -1,0 +1,67 @@
+From 229b2601804049d94f09006e8c4a542c78158ab9 Mon Sep 17 00:00:00 2001
+From: Adrian Perez de Castro <aperez@igalia.com>
+Date: Sat, 10 Apr 2021 18:29:24 +0300
+Subject: [PATCH 12/13] Revert "view-backend-exportable-private: Add
+ wl_client_add_destroy_listener in the ViewBackend"
+
+This reverts commit d688cd2558807c1ed15d67e5b0ecfad52a2bf90b.
+---
+ src/view-backend-private.cpp | 17 ++---------------
+ src/view-backend-private.h   |  1 -
+ 2 files changed, 2 insertions(+), 16 deletions(-)
+
+diff --git a/src/view-backend-private.cpp b/src/view-backend-private.cpp
+index af5472f..b78831d 100644
+--- a/src/view-backend-private.cpp
++++ b/src/view-backend-private.cpp
+@@ -95,33 +95,20 @@ void ViewBackend::dispatchFrameCallbacks()
+     if (G_LIKELY(m_bridgeId))
+         WS::Instance::singleton().dispatchFrameCallbacks(m_bridgeId);
+ 
+-    if (m_client)
+-        wl_client_flush(m_client);
++    wl_client_flush(m_client);
+     wpe_view_backend_dispatch_frame_displayed(m_backend);
+ }
+ 
+ void ViewBackend::releaseBuffer(struct wl_resource* buffer_resource)
+ {
+     wl_buffer_send_release(buffer_resource);
+-    if (m_client)
+-        wl_client_flush(m_client);
++    wl_client_flush(m_client);
+ }
+ 
+ void ViewBackend::registerSurface(uint32_t bridgeId)
+ {
+     m_bridgeId = bridgeId;
+     m_client = WS::Instance::singleton().registerViewBackend(m_bridgeId, *this);
+-
+-    this->m_destroyClientListener.notify = (wl_notify_func_t) [](struct wl_listener* listener, void* data)
+-    {
+-        ViewBackend *viewBackend = wl_container_of(listener, viewBackend, m_destroyClientListener);
+-
+-        struct wl_client* client = (struct wl_client*) data;
+-        g_debug("ViewBackend <%p>: wl_client <%p> destroy notification for fd %d", viewBackend, data, wl_client_get_fd(client));
+-        viewBackend->m_client = NULL;
+-    };
+-    wl_client_add_destroy_listener(m_client,
+-                                   &this->m_destroyClientListener);
+ }
+ 
+ void ViewBackend::unregisterSurface(uint32_t bridgeId)
+diff --git a/src/view-backend-private.h b/src/view-backend-private.h
+index 599382b..15e98e6 100644
+--- a/src/view-backend-private.h
++++ b/src/view-backend-private.h
+@@ -86,7 +86,6 @@ private:
+ 
+     std::unique_ptr<FdoIPC::Connection> m_socket;
+     int m_clientFd { -1 };
+-    struct wl_listener m_destroyClientListener;
+ };
+ 
+ struct wpe_view_backend_private {
+-- 
+2.31.1
+

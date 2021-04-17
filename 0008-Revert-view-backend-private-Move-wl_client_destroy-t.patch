@@ -1,0 +1,40 @@
+From 00a6f6d61cb20af45714360bf458348aeaf08751 Mon Sep 17 00:00:00 2001
+From: Adrian Perez de Castro <aperez@igalia.com>
+Date: Sat, 10 Apr 2021 18:27:55 +0300
+Subject: [PATCH 08/13] Revert "view-backend-private: Move wl_client_destroy to
+ unregisterSurface()"
+
+This reverts commit f54135e65a6894bdf509153d2f6e96a627352306.
+---
+ src/view-backend-private.cpp | 2 --
+ src/ws.cpp                   | 1 +
+ 2 files changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/src/view-backend-private.cpp b/src/view-backend-private.cpp
+index 4920037..e1554bb 100644
+--- a/src/view-backend-private.cpp
++++ b/src/view-backend-private.cpp
+@@ -120,8 +120,6 @@ void ViewBackend::unregisterSurface(uint32_t bridgeId)
+     if (!bridgeId || m_bridgeId != bridgeId)
+         return;
+ 
+-    g_clear_pointer(&m_client.object, wl_client_destroy);
+-
+     WS::Instance::singleton().unregisterViewBackend(m_bridgeId);
+     m_bridgeId = 0;
+ }
+diff --git a/src/ws.cpp b/src/ws.cpp
+index 87faaf3..80cb39b 100644
+--- a/src/ws.cpp
++++ b/src/ws.cpp
+@@ -534,6 +534,7 @@ void Instance::unregisterViewBackend(uint32_t bridgeId)
+     auto it = m_viewBackendMap.find(bridgeId);
+     if (it != m_viewBackendMap.end()) {
+         it->second->apiClient = nullptr;
++        wl_client_destroy(wl_resource_get_client(it->second->resource));
+         m_viewBackendMap.erase(it);
+     }
+ }
+-- 
+2.31.1
+

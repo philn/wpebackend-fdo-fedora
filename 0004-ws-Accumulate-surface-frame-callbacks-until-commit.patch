@@ -1,0 +1,262 @@
+From 98ad602e5f5d51162ec715a023b87d06a71d627b Mon Sep 17 00:00:00 2001
+From: Adrian Perez de Castro <aperez@igalia.com>
+Date: Thu, 8 Apr 2021 00:57:49 +0300
+Subject: [PATCH 04/13] ws: Accumulate surface frame callbacks until commit
+
+Move code around to accumulate surface frame callback additions until
+changes are comitted to the surface, as intended according to the base
+Wayland protocol specification.
+
+As a bonus, remove the auxiliar ViewBackend::FrameCallbackResource
+by passing a destruction callback to wl_resource_set_implementation()
+and using the internal wl_resource list link.
+
+(cherry picked from commit 3ab4a3c9770d333ebbc65ab42a604836c6da57ec)
+---
+ src/view-backend-private.cpp | 45 ++----------------------------------
+ src/view-backend-private.h   | 14 -----------
+ src/ws.cpp                   | 19 +++++++++++++--
+ src/ws.h                     | 39 ++++++++++++++++++++++++++++++-
+ 4 files changed, 57 insertions(+), 60 deletions(-)
+
+diff --git a/src/view-backend-private.cpp b/src/view-backend-private.cpp
+index 367e6c3..f04a57e 100644
+--- a/src/view-backend-private.cpp
++++ b/src/view-backend-private.cpp
+@@ -35,7 +35,6 @@ ViewBackend::ViewBackend(ClientBundle* clientBundle, struct wpe_view_backend* ba
+ {
+     m_clientBundle->viewBackend = this;
+ 
+-    wl_list_init(&m_frameCallbacks);
+     wl_list_init(&m_clientDestroy.link);
+ }
+ 
+@@ -72,15 +71,6 @@ int ViewBackend::clientFd()
+     return dup(m_clientFd);
+ }
+ 
+-void ViewBackend::frameCallback(struct wl_resource* callback)
+-{
+-    auto* resource = new FrameCallbackResource;
+-    resource->resource = callback;
+-    resource->destroyListener.notify = FrameCallbackResource::destroyNotify;
+-    wl_resource_add_destroy_listener(callback, &resource->destroyListener);
+-    wl_list_insert(&m_frameCallbacks, &resource->link);
+-}
+-
+ void ViewBackend::exportBufferResource(struct wl_resource* bufferResource)
+ {
+     m_clientBundle->exportBuffer(bufferResource);
+@@ -103,16 +93,8 @@ void ViewBackend::exportEGLStreamProducer(struct wl_resource* bufferResource)
+ 
+ void ViewBackend::dispatchFrameCallbacks()
+ {
+-    if (G_UNLIKELY(!m_client))
+-        return;
+-
+-    FrameCallbackResource* resource;
+-    wl_list_for_each(resource, &m_frameCallbacks, link) {
+-        wl_callback_send_done(resource->resource, 0);
+-    }
+-    clearFrameCallbacks();
+-
+-    wl_client_flush(m_client);
++    if (G_LIKELY(m_bridgeId))
++        WS::Instance::singleton().dispatchFrameCallbacks(m_bridgeId);
+ 
+     wpe_view_backend_dispatch_frame_displayed(m_backend);
+ }
+@@ -130,7 +112,6 @@ void ViewBackend::clientDestroyNotify(struct wl_listener* listener, void*)
+ {
+     ViewBackend* self = wl_container_of(listener, self, m_clientDestroy);
+ 
+-    self->clearFrameCallbacks();
+     WS::Instance::singleton().unregisterViewBackend(self->m_bridgeId);
+     self->m_client = nullptr;
+     self->m_bridgeId = 0;
+@@ -180,25 +161,3 @@ void ViewBackend::didReceiveMessage(uint32_t messageId, uint32_t messageBody)
+         assert(!"WPE fdo received an invalid IPC message");
+     }
+ }
+-
+-void ViewBackend::clearFrameCallbacks()
+-{
+-    FrameCallbackResource* resource;
+-    FrameCallbackResource* next;
+-    wl_list_for_each_safe(resource, next, &m_frameCallbacks, link) {
+-        wl_list_remove(&resource->link);
+-        wl_list_remove(&resource->destroyListener.link);
+-        wl_resource_destroy(resource->resource);
+-        delete resource;
+-    }
+-    wl_list_init(&m_frameCallbacks);
+-}
+-
+-void ViewBackend::FrameCallbackResource::destroyNotify(struct wl_listener* listener, void*)
+-{
+-    FrameCallbackResource* resource;
+-    resource = wl_container_of(listener, resource, destroyListener);
+-
+-    wl_list_remove(&resource->link);
+-    delete resource;
+-}
+diff --git a/src/view-backend-private.h b/src/view-backend-private.h
+index 9500262..a598dee 100644
+--- a/src/view-backend-private.h
++++ b/src/view-backend-private.h
+@@ -63,7 +63,6 @@ public:
+ 
+     void initialize();
+     int clientFd();
+-    void frameCallback(struct wl_resource* callbackResource) override;
+     void exportBufferResource(struct wl_resource* bufferResource) override;
+     void exportLinuxDmabuf(const struct linux_dmabuf_buffer *dmabuf_buffer) override;
+     void exportShmBuffer(struct wl_resource* bufferResource, struct wl_shm_buffer* shmBuffer) override;
+@@ -72,22 +71,11 @@ public:
+     void releaseBuffer(struct wl_resource* buffer_resource);
+ 
+ private:
+-    struct FrameCallbackResource {
+-        struct wl_resource* resource;
+-
+-        struct wl_list link;
+-        struct wl_listener destroyListener;
+-
+-        static void destroyNotify(struct wl_listener*, void*);
+-    };
+-
+     void didReceiveMessage(uint32_t messageId, uint32_t messageBody) override;
+ 
+     void registerSurface(uint32_t);
+     void unregisterSurface(uint32_t);
+ 
+-    void clearFrameCallbacks();
+-
+     static gboolean s_socketCallback(GSocket*, GIOCondition, gpointer);
+ 
+     uint32_t m_bridgeId { 0 };
+@@ -99,8 +87,6 @@ private:
+     ClientBundle* m_clientBundle;
+     struct wpe_view_backend* m_backend;
+ 
+-    struct wl_list m_frameCallbacks;
+-
+     std::unique_ptr<FdoIPC::Connection> m_socket;
+     int m_clientFd { -1 };
+ };
+diff --git a/src/ws.cpp b/src/ws.cpp
+index a044b2e..87faaf3 100644
+--- a/src/ws.cpp
++++ b/src/ws.cpp
+@@ -110,8 +110,11 @@ static const struct wl_surface_interface s_surfaceInterface = {
+             return;
+         }
+ 
+-        wl_resource_set_implementation(callbackResource, nullptr, nullptr, nullptr);
+-        surface.apiClient->frameCallback(callbackResource);
++        wl_resource_set_implementation(callbackResource, nullptr, nullptr,
++            [](struct wl_resource* resource) {
++                wl_list_remove(wl_resource_get_link(resource));
++            });
++        surface.addFrameCallback(callbackResource);
+     },
+     // set_opaque_region
+     [](struct wl_client*, struct wl_resource*, struct wl_resource*) { },
+@@ -121,6 +124,7 @@ static const struct wl_surface_interface s_surfaceInterface = {
+     [](struct wl_client*, struct wl_resource* surfaceResource)
+     {
+         auto& surface = *static_cast<Surface*>(wl_resource_get_user_data(surfaceResource));
++        surface.commit();
+         WS::Instance::singleton().impl().surfaceCommit(surface);
+     },
+     // set_buffer_transform
+@@ -534,4 +538,15 @@ void Instance::unregisterViewBackend(uint32_t bridgeId)
+     }
+ }
+ 
++void Instance::dispatchFrameCallbacks(uint32_t bridgeId)
++{
++    auto it = m_viewBackendMap.find(bridgeId);
++    if (it == m_viewBackendMap.end()) {
++        g_error("Instance::dispatchFrameCallbacks(): "
++                "Cannot find surface with bridgeId %" PRIu32 " in view backend map.", bridgeId);
++    }
++
++    it->second->dispatchFrameCallbacks();
++}
++
+ } // namespace WS
+diff --git a/src/ws.h b/src/ws.h
+index aa0c083..30baf8e 100644
+--- a/src/ws.h
++++ b/src/ws.h
+@@ -41,7 +41,6 @@ namespace WS {
+ struct APIClient {
+     virtual ~APIClient() = default;
+ 
+-    virtual void frameCallback(struct wl_resource*) = 0;
+     virtual void exportBufferResource(struct wl_resource*) = 0;
+     virtual void exportLinuxDmabuf(const struct linux_dmabuf_buffer *dmabuf_buffer) = 0;
+     virtual void exportShmBuffer(struct wl_resource*, struct wl_shm_buffer*) = 0;
+@@ -52,6 +51,18 @@ struct Surface {
+     explicit Surface(struct wl_resource* surfaceResource):
+         resource {surfaceResource}
+     {
++        wl_list_init(&m_pendingFrameCallbacks);
++        wl_list_init(&m_currentFrameCallbacks);
++    }
++
++    ~Surface()
++    {
++        struct wl_resource* resource;
++        struct wl_resource* tmp;
++        wl_resource_for_each_safe(resource, tmp, &m_pendingFrameCallbacks)
++            wl_resource_destroy(resource);
++        wl_resource_for_each_safe(resource, tmp, &m_currentFrameCallbacks)
++            wl_resource_destroy(resource);
+     }
+ 
+     struct wl_resource* resource;
+@@ -61,6 +72,31 @@ struct Surface {
+     struct wl_resource* bufferResource { nullptr };
+     const struct linux_dmabuf_buffer* dmabufBuffer { nullptr };
+     struct wl_shm_buffer* shmBuffer { nullptr };
++
++    void commit()
++    {
++        wl_list_insert_list(&m_currentFrameCallbacks, &m_pendingFrameCallbacks);
++        wl_list_init(&m_pendingFrameCallbacks);
++    }
++
++    void addFrameCallback(struct wl_resource* resource)
++    {
++        wl_list_insert(m_pendingFrameCallbacks.prev, wl_resource_get_link(resource));
++    }
++
++    void dispatchFrameCallbacks()
++    {
++        struct wl_resource* resource;
++        struct wl_resource* tmp;
++        wl_resource_for_each_safe(resource, tmp, &m_currentFrameCallbacks) {
++            wl_callback_send_done(resource, 0);
++            wl_resource_destroy(resource);
++        }
++    }
++
++private:
++    struct wl_list m_pendingFrameCallbacks;
++    struct wl_list m_currentFrameCallbacks;
+ };
+ 
+ class Instance {
+@@ -95,6 +131,7 @@ public:
+     void registerSurface(uint32_t, Surface*);
+     struct wl_client* registerViewBackend(uint32_t, APIClient&);
+     void unregisterViewBackend(uint32_t);
++    void dispatchFrameCallbacks(uint32_t);
+ 
+     using VideoPlaneDisplayDmaBufCallback = std::function<void(struct wpe_video_plane_display_dmabuf_export*, uint32_t, int, int32_t, int32_t, int32_t, int32_t, uint32_t)>;
+     using VideoPlaneDisplayDmaBufEndOfStreamCallback = std::function<void(uint32_t)>;
+-- 
+2.31.1
+

@@ -1,0 +1,63 @@
+From 6963a05959d8be52d4b8ee0cafc49da72a04a6dd Mon Sep 17 00:00:00 2001
+From: Adrian Perez de Castro <aperez@igalia.com>
+Date: Tue, 13 Apr 2021 00:30:08 +0300
+Subject: [PATCH 02/13] ws: Remove unneeded Surface::id member
+
+The Wayland resource identifier is not used at the moment, and moreover
+if ever needed wl_resource_get_id(surface->bufferResource) can be used
+to retrieve it.
+
+(cherry picked from commit 55d05be5529635b7797f34b3e9871612909859fc)
+---
+ src/ws.cpp | 6 ++----
+ src/ws.h   | 9 ++++++---
+ 2 files changed, 8 insertions(+), 7 deletions(-)
+
+diff --git a/src/ws.cpp b/src/ws.cpp
+index 5602595..c23e53c 100644
+--- a/src/ws.cpp
++++ b/src/ws.cpp
+@@ -144,9 +144,7 @@ static const struct wl_compositor_interface s_compositorInterface = {
+             return;
+         }
+ 
+-        auto* surface = new Surface;
+-        surface->client = client;
+-        surface->id = id;
++        auto* surface = new Surface {surfaceResource};
+         wl_resource_set_implementation(surfaceResource, &s_surfaceInterface, surface,
+             [](struct wl_resource* resource)
+             {
+@@ -524,7 +522,7 @@ struct wl_client* Instance::registerViewBackend(uint32_t surfaceId, APIClient& a
+         g_error("Instance::registerViewBackend(): " "Cannot find surface %" PRIu32 " in view backend map.", surfaceId);
+ 
+     it->second->apiClient = &apiClient;
+-    return it->second->client;
++    return wl_resource_get_client(it->second->resource);
+ }
+ 
+ void Instance::unregisterViewBackend(uint32_t surfaceId)
+diff --git a/src/ws.h b/src/ws.h
+index d4376c4..683b679 100644
+--- a/src/ws.h
++++ b/src/ws.h
+@@ -48,10 +48,13 @@ struct APIClient {
+     virtual void exportEGLStreamProducer(struct wl_resource*) = 0;
+ };
+ 
+-struct Surface;
+ struct Surface {
+-    uint32_t id { 0 };
+-    struct wl_client* client { nullptr };
++    explicit Surface(struct wl_resource* surfaceResource):
++        resource {surfaceResource}
++    {
++    }
++
++    struct wl_resource* resource;
+ 
+     APIClient* apiClient { nullptr };
+ 
+-- 
+2.31.1
+

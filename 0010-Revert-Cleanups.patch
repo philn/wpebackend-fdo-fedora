@@ -1,0 +1,101 @@
+From 18244c702bba27d32a022bd8a2ff9269fcb18cc5 Mon Sep 17 00:00:00 2001
+From: Adrian Perez de Castro <aperez@igalia.com>
+Date: Sat, 10 Apr 2021 18:29:05 +0300
+Subject: [PATCH 10/13] Revert "Cleanups."
+
+This reverts commit 9e7dfbe7cbca8bc59c81d1e6421a527a87796880.
+---
+ src/view-backend-private.cpp | 31 ++++++++++++++++---------------
+ src/view-backend-private.h   | 12 ++++++------
+ 2 files changed, 22 insertions(+), 21 deletions(-)
+
+diff --git a/src/view-backend-private.cpp b/src/view-backend-private.cpp
+index e1554bb..6ba3fcb 100644
+--- a/src/view-backend-private.cpp
++++ b/src/view-backend-private.cpp
+@@ -95,24 +95,33 @@ void ViewBackend::dispatchFrameCallbacks()
+     if (G_LIKELY(m_bridgeId))
+         WS::Instance::singleton().dispatchFrameCallbacks(m_bridgeId);
+ 
+-    if (m_client.object)
+-        wl_client_flush(m_client.object);
++    if (m_client)
++        wl_client_flush(m_client);
+     wpe_view_backend_dispatch_frame_displayed(m_backend);
+ }
+ 
+ void ViewBackend::releaseBuffer(struct wl_resource* buffer_resource)
+ {
+     wl_buffer_send_release(buffer_resource);
+-    if (m_client.object)
+-        wl_client_flush(m_client.object);
++    if (m_client)
++        wl_client_flush(m_client);
+ }
+ 
+ void ViewBackend::registerSurface(uint32_t bridgeId)
+ {
+     m_bridgeId = bridgeId;
+-    m_client.object = WS::Instance::singleton().registerViewBackend(m_bridgeId, *this);
+-    m_client.destroyListener.notify = Client::destroyNotify;
+-    wl_client_add_destroy_listener(m_client.object, &m_client.destroyListener);
++    m_client = WS::Instance::singleton().registerViewBackend(m_bridgeId, *this);
++
++    struct wl_client_destroy_listener *listener = new wl_client_destroy_listener {this, };
++    listener->destroyClientListener.notify = (wl_notify_func_t) [](struct wl_listener* listener, void* data)
++    {
++        struct wl_client_destroy_listener *container;
++        container = wl_container_of(listener, container, destroyClientListener);
++        container->backend->m_client = NULL;
++        delete container;  // Release the wl_client_destroy_listener instance since this is not longer needed.
++    };
++    wl_client_add_destroy_listener(m_client,
++                                   &listener->destroyClientListener);
+ }
+ 
+ void ViewBackend::unregisterSurface(uint32_t bridgeId)
+@@ -137,11 +146,3 @@ void ViewBackend::didReceiveMessage(uint32_t messageId, uint32_t messageBody)
+         assert(!"WPE fdo received an invalid IPC message");
+     }
+ }
+-
+-void ViewBackend::Client::destroyNotify(struct wl_listener* listener, void*)
+-{
+-    Client* client;
+-    client = wl_container_of(listener, client, destroyListener);
+-
+-    client->object = nullptr;
+-}
+diff --git a/src/view-backend-private.h b/src/view-backend-private.h
+index 37eab08..81b083c 100644
+--- a/src/view-backend-private.h
++++ b/src/view-backend-private.h
+@@ -79,12 +79,7 @@ private:
+     static gboolean s_socketCallback(GSocket*, GIOCondition, gpointer);
+ 
+     uint32_t m_bridgeId { 0 };
+-    struct Client {
+-        struct wl_client* object { nullptr };
+-        struct wl_listener destroyListener;
+-
+-        static void destroyNotify(struct wl_listener*, void*);
+-    } m_client;
++    struct wl_client* m_client { nullptr };
+ 
+     ClientBundle* m_clientBundle;
+     struct wpe_view_backend* m_backend;
+@@ -93,6 +88,11 @@ private:
+     int m_clientFd { -1 };
+ };
+ 
++struct wl_client_destroy_listener {
++    ViewBackend* backend;
++    struct wl_listener destroyClientListener;
++};
++
+ struct wpe_view_backend_private {
+     wpe_view_backend_private(std::unique_ptr<ClientBundle>&& clientBundle, struct wpe_view_backend* backend)
+         : clientBundle(std::move(clientBundle))
+-- 
+2.31.1
+

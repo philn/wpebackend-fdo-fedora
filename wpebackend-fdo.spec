@@ -2,12 +2,26 @@
 
 Name:           wpebackend-fdo
 Version:        1.9.90
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        A WPE backend designed for Linux desktop systems
 
 License:        BSD
 URL:            https://github.com/Igalia/%{name}
 Source0:        https://github.com/Igalia/%{name}/archive/%{version}/%{name}-%{version}.tar.xz
+
+# https://github.com/Igalia/WPEBackend-fdo/issues/145
+Patch0:         0001-Add-some-checks-to-ensure-we-properly-bind-server-gl.patch
+Patch1:         0002-ws-Remove-unneeded-Surface-id-member.patch
+Patch2:         0003-ws-Rename-surfaceId-to-bridgeId-where-appropriate.patch
+Patch3:         0004-ws-Accumulate-surface-frame-callbacks-until-commit.patch
+Patch4:         0006-meson-Make-scripts-version.py-work-with-older-Python.patch
+Patch5:         0007-Revert-view-backend-Properly-unregister-surfaces.patch
+Patch6:         0008-Revert-view-backend-private-Move-wl_client_destroy-t.patch
+Patch7:         0009-Revert-ws-Call-wl_client_destroy-for-the-created-wl_.patch
+Patch8:         0010-Revert-Cleanups.patch
+Patch9:         0011-Revert-view-backend-exportable-private-Move-ViewBack.patch
+Patch10:        0012-Revert-view-backend-exportable-private-Add-wl_client.patch
+Patch11:        0013-ws-Remove-wl_client-pointer-that-can-end-up-dangling.patch
 
 BuildRequires:  gcc-c++
 BuildRequires:  meson
@@ -53,6 +67,9 @@ files for developing applications that use %{name}.
 %{_libdir}/pkgconfig/wpebackend-fdo-1.0.pc
 
 %changelog
+* Sat Apr 17 2021 Michael Catanzaro <mcatanzaro@redhat.com> - 1.9.90-2
+- Stop crashing after process swap
+
 * Thu Apr 01 2021 Michael Catanzaro <mcatanzaro@redhat.com> - 1.9.90-1
 - Update to 1.9.90
 

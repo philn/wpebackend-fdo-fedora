@@ -1,7 +1,7 @@
 %undefine __cmake_in_source_build
 
 Name:           wpebackend-fdo
-Version:        1.9.92
+Version:        1.10.0
 Release:        1%{?dist}
 Summary:        A WPE backend designed for Linux desktop systems
 
@@ -60,6 +60,9 @@ files for developing applications that use %{name}.
 %{_libdir}/pkgconfig/wpebackend-fdo-1.0.pc
 
 %changelog
+* Mon Jun 07 2021 Michael Catanzaro <mcatanzaro@redhat.com> - 1.10.0-1
+- Update to 1.10.0
+
 * Fri May 14 2021 Michael Catanzaro <mcatanzaro@redhat.com> - 1.9.92-1
 - Update to 1.9.92
 - Add GPG verification of source tarball

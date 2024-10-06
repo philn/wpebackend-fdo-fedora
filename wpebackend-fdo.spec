@@ -1,18 +1,13 @@
 %undefine __cmake_in_source_build
 
 Name:           wpebackend-fdo
-Version:        1.14.2
+Version:        1.14.3
 Release:        %autorelease
 Summary:        A WPE backend designed for Linux desktop systems
 
 License:        BSD
 URL:            https://github.com/Igalia/%{name}
-Source0:        https://github.com/Igalia/%{name}/archive/%{version}/%{name}-%{version}.tar.xz
-Source1:        https://github.com/Igalia/%{name}/archive/%{version}/%{name}-%{version}.tar.xz.asc
-# Created from https://keys.openpgp.org/vks/v1/by-fingerprint/5AA3BC334FD7E3369E7C77B291C559DBE4C9123B
-# $ gpg --import 5AA3BC334FD7E3369E7C77B291C559DBE4C9123B.asc
-# $ gpg2 --export --export-options export-minimal 5AA3BC334FD7E3369E7C77B291C559DBE4C9123B > gpgkey-5AA3BC334FD7E3369E7C77B291C559DBE4C9123B.gpg
-Source2:        gpgkey-5AA3BC334FD7E3369E7C77B291C559DBE4C9123B.gpg
+Source0:        https://wpewebkit.org/releases/wpebackend-fdo-%{version}.tar.xz
 
 BuildRequires:  gcc-c++
 BuildRequires:  gnupg2
@@ -38,7 +33,6 @@ The %{name}-devel package contains libraries, build data, and header
 files for developing applications that use %{name}.
 
 %prep
-%{gpgverify} --keyring='%{SOURCE2}' --signature='%{SOURCE1}' --data='%{SOURCE0}'
 %autosetup -p1 -n %{name}-%{version}
 
 %build

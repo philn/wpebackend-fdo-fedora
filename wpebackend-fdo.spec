@@ -1,15 +1,13 @@
 %undefine __cmake_in_source_build
 
 Name:           wpebackend-fdo
-Version:        1.14.3
+Version:        1.16.0
 Release:        %autorelease
 Summary:        A WPE backend designed for Linux desktop systems
 
 License:        BSD
 URL:            https://github.com/Igalia/%{name}
 Source0:        https://wpewebkit.org/releases/wpebackend-fdo-%{version}.tar.xz
-
-Patch:          0001-src-ipc.h-Include-stdint.h-for-uint32_t.patch
 
 BuildRequires:  gcc-c++
 BuildRequires:  gnupg2
